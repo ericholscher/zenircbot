@@ -7,7 +7,10 @@ from gevent import monkey
 from services.lib.api import load_config
 monkey.patch_all()
 
-r = redis.StrictRedis(host='localhost', port=6379, db=0)
+config = load_config('bot.json')
+redis_config = config['redis']
+
+r = redis.StrictRedis(host=redis_config['host'], port=redis_config['port'], db=redis_config['db'])
 
 class RelayBot(IRCBot):
 
@@ -16,7 +19,6 @@ class RelayBot(IRCBot):
         gevent.spawn(self.do_sub)
 
     def do_sub(self):
-        r = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.pubsub = r.pubsub()
         self.pubsub.subscribe('out')
         for msg in self.pubsub.listen():
@@ -45,7 +47,6 @@ class RelayBot(IRCBot):
             ('.*', self.do_pub),
         )
 
-config = load_config('bot.json')
 
 run_bot(RelayBot, config['servers'][0]['hostname'], config['servers'][0]['port'],
         config['servers'][0]['nick'], config['servers'][0]['channels'])
